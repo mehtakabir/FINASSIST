@@ -1,0 +1,13 @@
+Here’s where “univariate analysis” is covered in the course:
+
+- Video 8: Machine Learning Development Life Cycle
+  - Brief mention/definition around 11:17–11:21 (about 4 seconds total). Good for quick context within the lifecycle.
+
+- Video 18: EDA using Univariate Analysis
+  - Dedicated coverage with examples. Key moments:
+    - 26:40–26:42
+    - 29:42–29:44
+    - 29:58–30:00
+    - Tip: Open Video 18 and jump to around 26:40, then continue through the 30:00 mark for the focused walkthrough.
+
+If you want the main teaching segment, go to Video 18; if you just want where it’s mentioned in context, check Video 8 at ~11:17–11:21.

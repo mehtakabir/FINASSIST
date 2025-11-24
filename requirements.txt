@@ -1,0 +1,20 @@
+flask==3.0.0
+flask-cors==4.0.0
+pandas==2.1.0
+numpy==1.24.3
+scikit-learn==1.3.0
+joblib==1.3.2
+requests==2.31.0
+openai==1.3.0
+python-dotenv==1.0.0
+langchain
+langchain-core
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+google-generativeai
+langchain-huggingface
+transformers
+huggingface-hub
+ollama BGE-M3
+ffmpeg

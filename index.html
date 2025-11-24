@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Course Assistant - RAG System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator.active {
+            background: rgba(76, 175, 80, 0.8);
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 75vh;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-content {
+            display: inline-block;
+            padding: 15px 20px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .chunks-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chunks-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+
+        .chunk-card {
+            background: #f8f9fa;
+            border-left: 3px solid #667eea;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+
+        .chunk-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .chunk-timestamp {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .chunk-text {
+            color: #666;
+            font-style: italic;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .welcome-message h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .suggestion-pill {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .suggestion-pill:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .chat-container {
+                height: 70vh;
+            }
+
+            .message-content {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 ML Course Assistant</h1>
+            <p>Ask me anything about the Machine Learning course</p>
+            <div class="status-indicator" id="statusIndicator">
+                <span id="statusText">Checking connection...</span>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="messages-area" id="messagesArea">
+                <div class="welcome-message">
+                    <h2>Welcome! 👋</h2>
+                    <p>I'm your AI teaching assistant. Ask me questions about the Machine Learning course content.</p>
+                    <div class="suggestion-pills">
+                        <div class="suggestion-pill" onclick="sendSuggestion('Where is univariate analysis taught?')">
+                            Where is univariate analysis taught?
+                        </div>
+                        <div class="suggestion-pill" onclick="sendSuggestion('What is the ML development lifecycle?')">
+                            What is the ML development lifecycle?
+                        </div>
+                        <div class="suggestion-pill" onclick="sendSuggestion('How is EDA performed?')">
+                            How is EDA performed?
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    class="input-field" 
+                    id="queryInput" 
+                    placeholder="Ask a question about the course..."
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendQuery()">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let isLoading = false;
+
+        // Check server health on load
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_URL}/api/health`);
+                const data = await response.json();
+                
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                
+                if (data.status === 'running' && data.embeddings_loaded) {
+                    indicator.classList.add('active');
+                    statusText.textContent = `✓ Connected (${data.total_chunks} chunks loaded)`;
+                } else {
+                    statusText.textContent = '⚠ Server running but embeddings not loaded';
+                }
+            } catch (error) {
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('statusText');
+                statusText.textContent = '✗ Server not reachable';
+            }
+        }
+
+        function addMessage(content, type, chunks = null) {
+            const messagesArea = document.getElementById('messagesArea');
+            const welcomeMsg = messagesArea.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            let chunksHtml = '';
+            if (chunks && chunks.length > 0) {
+                chunksHtml = `
+                    <div class="chunks-section">
+                        <div class="chunks-title">📚 Referenced Video Sections:</div>
+                        ${chunks.map(chunk => `
+                            <div class="chunk-card">
+                                <div class="chunk-header">Video ${chunk.number}: ${chunk.title}</div>
+                                <div class="chunk-timestamp">⏱ ${chunk.start} - ${chunk.end}</div>
+                                <div class="chunk-text">"${chunk.text}"</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    ${content.replace(/\n/g, '<br>')}
+                    ${chunksHtml}
+                </div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function addErrorMessage(message) {
+            const messagesArea = document.getElementById('messagesArea');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+            messagesArea.appendChild(errorDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        async function sendQuery() {
+            if (isLoading) return;
+
+            const input = document.getElementById('queryInput');
+            const query = input.value.trim();
+
+            if (!query) return;
+
+            isLoading = true;
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>';
+
+            addMessage(query, 'user');
+            input.value = '';
+
+            try {
+                const response = await fetch(`${API_URL}/api/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addMessage(data.response, 'assistant', data.relevant_chunks);
+                } else {
+                    addErrorMessage(data.error || 'Something went wrong');
+                }
+            } catch (error) {
+                addErrorMessage('Could not connect to the server. Make sure it\'s running.');
+            } finally {
+                isLoading = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !isLoading) {
+                sendQuery();
+            }
+        }
+
+        function sendSuggestion(text) {
+            const input = document.getElementById('queryInput');
+            input.value = text;
+            sendQuery();
+        }
+
+        // Initialize
+        checkHealth();
+    </script>
+</body>
+</html>
